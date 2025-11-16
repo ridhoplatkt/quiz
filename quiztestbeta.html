@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lomba Berenang Matematika - Anti Contek</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #0066cc;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #0066cc, #00bfff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,102,204,0.4);
+        }
+
+        .btn-host {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        /* Kolam Renang */
+        .swimming-pool {
+            background: linear-gradient(to bottom, #1e90ff, #00bfff);
+            border: 5px solid #0066cc;
+            border-radius: 10px;
+            height: 300px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .swimmer {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            transition: left 0.5s ease;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: repeating-linear-gradient(
+                45deg,
+                #ff0000,
+                #ff0000 10px,
+                #ffffff 10px,
+                #ffffff 20px
+            );
+        }
+
+        .disqualified {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+
+        /* Soal dan Opsi */
+        .question {
+            font-size: 20px;
+            margin: 20px 0;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .option:hover {
+            background: #0066cc;
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .option.disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            color: #666;
+        }
+
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .option.wrong {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        /* Warning */
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+
+        .cheat-detected {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .player-tag {
+            background: #f0f8ff;
+            border: 2px solid #0066cc;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .player-tag.disqualified {
+            background: #f8d7da;
+            border-color: #dc3545;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <h1>🏊‍♂️ Lomba Berenang Matematika 🏊‍♀️</h1>
+            <div class="warning">
+                ⚠️ <strong>PERINGATAN:</strong> Keluar aplikasi = Diskualifikasi otomatis!
+            </div>
+            <input type="text" id="player-name" placeholder="Masukkan nama kamu..." style="padding: 12px; margin: 15px; width: 80%; max-width: 300px; border: 2px solid #0066cc; border-radius: 10px; font-size: 16px;">
+            <br>
+            <button class="btn" onclick="joinGame()">Gabung Permainan</button>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <h1>🏊‍♂️ Ruang Tunggu 🏊‍♀️</h1>
+            <div class="player-list" id="player-list"></div>
+            <div id="host-controls">
+                <button class="btn btn-host" onclick="startGame()">Mulai Permainan</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <h1>🏊‍♂️ Ayo Berenang! 🏊‍♀️</h1>
+            <div class="swimming-pool" id="swimming-pool">
+                <div class="finish-line"></div>
+            </div>
+            <div class="question" id="question"></div>
+            <div class="options" id="options"></div>
+            <div style="margin: 15px; font-size: 18px; font-weight: bold;">
+                Waktu: <span id="time-left">15</span>s
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h1>🏆 Hasil Akhir 🏆</h1>
+            <div id="leaderboard"></div>
+            <button class="btn" onclick="backToLobby()">Main Lagi</button>
+        </div>
+    </div>
+
+    <script>
+        // BANK SOAL SANGAT MUDAH
+        const questionBank = [
+            { question: "2 × 3 = ?", options: ["5", "6", "7", "8"], correct: 1 },
+            { question: "4 × 2 = ?", options: ["6", "8", "10", "12"], correct: 1 },
+            { question: "5 × 2 = ?", options: ["7", "10", "12", "15"], correct: 1 },
+            { question: "3 × 3 = ?", options: ["6", "9", "12", "15"], correct: 1 },
+            { question: "2 × 5 = ?", options: ["7", "10", "12", "15"], correct: 1 },
+            { question: "6 ÷ 2 = ?", options: ["2", "3", "4", "5"], correct: 1 },
+            { question: "8 ÷ 4 = ?", options: ["1", "2", "3", "4"], correct: 1 },
+            { question: "10 ÷ 2 = ?", options: ["3", "4", "5", "6"], correct: 2 },
+            { question: "9 ÷ 3 = ?", options: ["2", "3", "4", "5"], correct: 1 },
+            { question: "5 + 3 = ?", options: ["7", "8", "9", "10"], correct: 1 },
+            { question: "7 + 2 = ?", options: ["8", "9", "10", "11"], correct: 1 },
+            { question: "4 + 6 = ?", options: ["8", "9", "10", "11"], correct: 2 },
+            { question: "8 + 3 = ?", options: ["10", "11", "12", "13"], correct: 1 },
+            { question: "8 - 3 = ?", options: ["4", "5", "6", "7"], correct: 1 },
+            { question: "10 - 4 = ?", options: ["5", "6", "7", "8"], correct: 1 },
+            { question: "7 - 2 = ?", options: ["4", "5", "6", "7"], correct: 1 },
+            { question: "9 - 5 = ?", options: ["3", "4", "5", "6"], correct: 1 }
+        ];
+
+        // VARIABEL GAME
+        let players = {};
+        let currentPlayer = null;
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let timer = null;
+        let timeLeft = 15;
+        let isTabActive = true;
+
+        // DETEKSI KELUAR APLIKASI
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                isTabActive = false;
+                if (currentPlayer && players[currentPlayer]) {
+                    disqualifyPlayer(currentPlayer, "Keluar dari aplikasi");
+                }
+            } else {
+                isTabActive = true;
+            }
+        });
+
+        // JOIN GAME - FIXED
+        function joinGame() {
+            const playerName = document.getElementById('player-name').value.trim();
+            if (!playerName) {
+                alert('Masukkan nama dulu!');
+                return;
+            }
+
+            currentPlayer = playerName;
+            players[playerName] = {
+                name: playerName,
+                score: 0,
+                position: 0,
+                disqualified: false
+            };
+
+            showScreen('lobby-screen');
+            updatePlayerList();
+            console.log('Player joined:', playerName);
+        }
+
+        // UPDATE DAFTAR PEMAIN
+        function updatePlayerList() {
+            const playerList = document.getElementById('player-list');
+            playerList.innerHTML = '';
+            
+            Object.values(players).forEach(player => {
+                const playerTag = document.createElement('div');
+                playerTag.className = `player-tag ${player.disqualified ? 'disqualified' : ''}`;
+                playerTag.textContent = player.name + (player.disqualified ? ' ❌' : '');
+                playerList.appendChild(playerTag);
+            });
+        }
+
+        // MULAI GAME - FIXED
+        function startGame() {
+            console.log('Game started!');
+            currentQuestions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
+            currentQuestionIndex = 0;
+            showScreen('game-screen');
+            showQuestion();
+            startTimer();
+        }
+
+        // TAMPILKAN SOAL - FIXED
+        function showQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            document.getElementById('question').textContent = `Soal ${currentQuestionIndex + 1}: ${question.question}`;
+            
+            const optionsElement = document.getElementById('options');
+            optionsElement.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => checkAnswer(index);
+                optionsElement.appendChild(optionElement);
+            });
+            
+            timeLeft = 15;
+            document.getElementById('time-left').textContent = timeLeft;
+            console.log('Question shown:', currentQuestionIndex);
+        }
+
+        // CEK JAWABAN - FIXED
+        function checkAnswer(selectedIndex) {
+            console.log('Answer clicked:', selectedIndex);
+            
+            // JIKA DIDISKUALIFIKASI, TIDAK BISA JAWAB
+            if (players[currentPlayer].disqualified) {
+                console.log('Player disqualified, cannot answer');
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            const options = document.querySelectorAll('.option');
+            
+            // Nonaktifkan semua opsi
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+            });
+
+            if (selectedIndex === question.correct) {
+                options[selectedIndex].classList.add('correct');
+                players[currentPlayer].score += 10;
+                players[currentPlayer].position += 1;
+                console.log('Correct answer! Score:', players[currentPlayer].score);
+            } else {
+                options[selectedIndex].classList.add('wrong');
+                options[question.correct].classList.add('correct');
+                console.log('Wrong answer');
+            }
+            
+            updateSwimmers();
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < currentQuestions.length) {
+                    showQuestion();
+                    resetTimer();
+                } else {
+                    endGame();
+                }
+            }, 2000);
+        }
+
+        // DISKUALIFIKASI PEMAIN - FIXED
+        function disqualifyPlayer(playerName, reason) {
+            if (players[playerName].disqualified) return;
+
+            players[playerName].disqualified = true;
+            players[playerName].score = 0;
+            
+            const disqualifyMsg = document.createElement('div');
+            disqualifyMsg.className = 'warning cheat-detected';
+            disqualifyMsg.textContent = `❌ ${playerName} DIDISKUALIFIKASI! Alasan: ${reason}`;
+            document.getElementById('game-screen').insertBefore(disqualifyMsg, document.getElementById('question'));
+            
+            // NONAKTIFKAN OPSI
+            const options = document.querySelectorAll('.option');
+            options.forEach(opt => {
+                opt.classList.add('disabled');
+                opt.style.pointerEvents = 'none';
+            });
+
+            updatePlayerList();
+            updateSwimmers();
+            console.log('Player disqualified:', playerName);
+            
+            setTimeout(() => {
+                disqualifyMsg.remove();
+            }, 5000);
+        }
+
+        // UPDATE PERENANG
+        function updateSwimmers() {
+            const pool = document.getElementById('swimming-pool');
+            pool.innerHTML = '<div class="finish-line"></div>';
+            
+            const playerArray = Object.values(players);
+            const poolWidth = pool.clientWidth - 80;
+            
+            playerArray.forEach((player, index) => {
+                const swimmer = document.createElement('div');
+                swimmer.className = `swimmer ${player.disqualified ? 'disqualified' : ''}`;
+                swimmer.style.bottom = `${40 + index * 70}px`;
+                swimmer.style.left = `${20 + (player.position / currentQuestions.length) * poolWidth}px`;
+                
+                swimmer.innerHTML = `
+                    <div style="font-size: 20px">${player.disqualified ? '❌' : '🏊'}</div>
+                    <div>${player.name}</div>
+                    <div>${player.score}pt</div>
+                `;
+                
+                pool.appendChild(swimmer);
+            });
+        }
+
+        // TIMER
+        function startTimer() {
+            resetTimer();
+        }
+
+        function resetTimer() {
+            if (timer) clearInterval(timer);
+            timeLeft = 15;
+            document.getElementById('time-left').textContent = timeLeft;
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('time-left').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < currentQuestions.length) {
+                        showQuestion();
+                        resetTimer();
+                    } else {
+                        endGame();
+                    }
+                }
+            }, 1000);
+        }
+
+        // AKHIR GAME
+        function endGame() {
+            clearInterval(timer);
+            showScreen('results-screen');
+            showLeaderboard();
+        }
+
+        // LEADERBOARD
+        function showLeaderboard() {
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '';
+            
+            const sortedPlayers = Object.values(players)
+                .filter(player => !player.disqualified)
+                .sort((a, b) => b.score - a.score);
+            
+            if (sortedPlayers.length === 0) {
+                leaderboard.innerHTML = '<div class="warning">❌ Semua pemain didiskualifikasi!</div>';
+                return;
+            }
+            
+            sortedPlayers.forEach((player, index) => {
+                const rank = document.createElement('div');
+                rank.style.cssText = `
+                    display: flex; justify-content: space-between; align-items: center;
+                    padding: 15px; margin: 10px 0; background: ${getRankColor(index)};
+                    border-radius: 10px; font-weight: bold;
+                `;
+                
+                rank.innerHTML = `
+                    <div>#${index + 1}</div>
+                    <div>${player.name}</div>
+                    <div>${player.score} poin</div>
+                `;
+                
+                leaderboard.appendChild(rank);
+            });
+        }
+
+        function getRankColor(rank) {
+            const colors = [
+                'linear-gradient(135deg, #ffd700, #ffed4e)',
+                'linear-gradient(135deg, #c0c0c0, #e0e0e0)',
+                'linear-gradient(135deg, #cd7f32, #e59e5c)',
+                '#f8f9fa', '#f8f9fa'
+            ];
+            return colors[rank] || '#f8f9fa';
+        }
+
+        // NAVIGASI - FIXED
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            console.log('Screen changed to:', screenId);
+        }
+
+        function backToLobby() {
+            Object.values(players).forEach(player => {
+                player.score = 0;
+                player.position = 0;
+                player.disqualified = false;
+            });
+            
+            showScreen('lobby-screen');
+            updatePlayerList();
+        }
+
+        // AUTO JADI HOST
+        window.onload = function() {
+            document.getElementById('host-controls').style.display = 'block';
+            console.log('Page loaded successfully');
+        };
+    </script>
+</body>
+</html>
